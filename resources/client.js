@@ -17,9 +17,11 @@ jQuery(document).ready(function() {
 
 	$("#btn1").click(function() {
 		socket.emit('getTweets');
+		$(".tweet_err").text('Getting Those Tweets!');
 	});
 
 	$("#btn2").click(function() {
 		socket.emit('event2');
+		$(".csv_err").text('Exporting JSON to CSV!');
 	});
 });

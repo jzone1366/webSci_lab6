@@ -1,4 +1,3 @@
-var twitter = require('ntwitter');
 var fs = require('fs');
 var json2csv = require('json2csv');
 var express = require('express');
@@ -6,6 +5,7 @@ var io = require('socket.io');
 var http = require('http');
 var app = express();
 var server = http.createServer(app);
+var twitter = require('ntwitter');
 var twit = new twitter({
 	consumer_key: '5UMbMiZmyfmZIv4w4wIvA',
 	consumer_secret: '4XbLRKae0JnngpHyvgXm1K0dnmHYjKGwsZhHrfychy0',
@@ -34,13 +34,13 @@ io.sockets.on('connection', function(socket){
 			stream.on('error', function(error, code){
 				console.log("error: " + error + ": " + code);
 			});
+
 			stream.on('end', function(response){
 				console.log("Stream Ended");
-				console.log(response);
 			});
+
 			stream.on('destroy', function(response){
 				console.log("Stream Destroyed");
-				console.log(response);
 			});
 			
 			stream.on('data', function(data){
@@ -51,16 +51,17 @@ io.sockets.on('connection', function(socket){
 					tweets.push(data);
 					i++;
 				}
+
 				else if(i == 1000){
+					i++;
 					fs.writeFile('tweets.json', JSON.stringify(tweets, null, 4), function(err){
 						if(err) throw err;
 						console.log("Tweets saved to file!");
-						i++;
 					});
 				}
+				
 				else{
-					console.log("Stream Destroyed");
-					setTimeout(stream.destroy, 10);
+					stream.destroy();
 				}
 			});
 		});
