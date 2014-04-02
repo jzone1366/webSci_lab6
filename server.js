@@ -22,11 +22,44 @@ app.use('/resources', express.static(__dirname + '/resources'));
 server.listen(8080);
 
 io = io.listen(server);
+
 io.sockets.on('connection', function(socket){
 	console.log('Connected');
 
 	socket.on('getTweets', function(){
-		console.log('Gettin dem dere tweets');
+		fs.exists('tweets.json', function(exists){
+			if(exists){
+				console.log("FILE EXISTS");
+			}
+			else{
+				console.log("FILE DOES NOT EXIST");
+			}
+		})
+	});
+
+	socket.on('event2', function(){
+		console.log("Converting to CSV.");
+		var data = fs.readFileSync('tweets.json').toString();
+		var json = JSON.parse(data);
+		var columns = ['created_at', 'id', 'text', 'user.id', 'user.name', 'user.screen_name', 'user.location', 'user.followers_count', 'user.friends_count', 'user.created_at', 'user.time_zone', 'user.profile_background_color', 'user.profile_image_url', 'geo', 'coordinates', 'place'];
+		var col_names = ['created_at', 'id','text', 'user_id', 'user_name', 'user_screen_name', 'user_location', 'user_followers_count', 'user_friends_count', 'user_created_at', 'user_time_zone', 'user_profile_background_color', 'user_profile_image_url', 'geo', 'coordinates', 'place'];
+
+		json2csv({data: json, fields: columns, fieldNames: col_names}, function(err, csv){
+			if(err) console.log(err);
+			fs.writeFile('tweets.csv', csv, function(err){
+				if(err) throw err;
+				console.log('file saved');
+			});
+		});
+	});
+
+	socket.on('disconnect', function(){
+		console.log('Disconnected');
+	});
+});
+
+function gatherTweets() {
+	console.log('Gettin dem dere tweets');
 		var i = 0;
 		var tweets = [];
 
@@ -65,28 +98,4 @@ io.sockets.on('connection', function(socket){
 				}
 			});
 		});
-	});
-
-	socket.on('event2', function(){
-		console.log("Converting to CSV.");
-		var data = fs.readFileSync('tweets.json').toString();
-		var json = JSON.parse(data);
-		var columns = ["created_at", "id", "id_str", "text", "source", "truncated", 
-		"in_reply_to_status_id", "in_reply_to_status_id_str", "in_reply_to_user_id", 
-		"in_reply_to_user_id_str", "in_reply_to_screen_name", "user", "geo", 
-		"coordinates", "place", "contributors", "retweeted_status", "retweet_count", 
-		"favorite_count", "entities", "favorited", "retweeted", "filter_level", "lang"];
-
-		json2csv({data: json, fields: columns}, function(err, csv){
-			if(err) console.log(err);
-			fs.writeFile('tweets.csv', csv, function(err){
-				if(err) throw err;
-				console.log('file saved');
-			});
-		});
-	});
-
-	socket.on('disconnect', function(){
-		console.log('Disconnected');
-	});
-});
+}
