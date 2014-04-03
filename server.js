@@ -27,21 +27,41 @@ io.sockets.on('connection', function(socket){
 	console.log('Connected');
 
 	socket.on('getTweets', function(){
-		fs.exists('tweets.json', function(exists){
+		/**
+		 * Check if the named file exists. If it does emit an event to notify the client of the existence to display a message to the user. 
+		 * @param  boolean exists True if the file exists. False otherwise.
+		 */
+		fs.exists('ITWS4200-lab6-zonej-tweets.json', function(exists){
+			
 			if(exists){
 				console.log("File is being overwritten!");
-				socket.emit("tweetOver");
-				gatherTweets();
+				socket.emit("tweetOver"); //Emit an event to the client of this socket for the client to display an alert based on this event. 
+				gatherTweets(); //call this function to gather the tweets
 			}
+			
 			else{
 				gatherTweets();
 				socket.emit("tweetSuccess");
 			}
-		})
+		});
 	});
 
 	socket.on('getCsv', function(){
-		tweet2csv();
+		/**
+		 * Check if the file exists to export. If the json file does not exists then a warning is displayed client side telling the user to create it first
+		 * @param  boolean exists True if exists, False otherwise.
+		 */
+		fs.exists('ITWS4200-lab6-zonej-tweets.json', function(exists){
+			
+			if(exists){
+				socket.emit("csvSuccess");
+				tweet2csv();
+			}
+
+			else {
+				socket.emit("jsonNotExist");
+			}
+		});
 	});
 
 	socket.on('disconnect', function(){
@@ -50,8 +70,9 @@ io.sockets.on('connection', function(socket){
 });
 
 /**
- * Connect to the streaming twitter API via ntwitter module to collect 1000 tweets to write to a json file. 
- * @return file ITWS4200-zonej-tweets.json
+ * Connect to the streaming twitter API via ntwitter module to collect 1000 tweets to write to a json file.
+ * Streams all the tweets into an array that will hold 1000 tweets. Once the array has 1000 tweets the array is then writted to a json file using node-fs module. 
+ * @return file ITWS4200-lab6-zonej-tweets.json
  */
 function gatherTweets() {
 	console.log('Gettin dem dere tweets');
@@ -82,7 +103,7 @@ function gatherTweets() {
 
 			else if(i == 1000){
 				i++;
-				fs.writeFile('ITWS4200-zonej-tweets.json', JSON.stringify(tweets, null, 4), function(err){
+				fs.writeFile('ITWS4200-lab6-zonej-tweets.json', JSON.stringify(tweets, null, 4), function(err){
 					if(err) throw err;
 					console.log("Tweets saved to file!");
 				});
@@ -97,11 +118,13 @@ function gatherTweets() {
 
 /**
  * Take the json file that is created by the gatherTweets function and exports certain fields to a csv file with the same name. This function uses the json2csv module of node. 
- * @return ITWS4200-zonej-tweets.csv
+ * This file first reads the json file into a string that can be parsed. The columns and column names are passed in as parameters to the json2csv module. 
+ * Writes a tweet csv file if there are no errors. Otherwise log the error. 
+ * @return ITWS4200-lab6-zonej-tweets.csv
  */
 function tweet2csv() {
 	console.log("Converting to CSV.");
-	var data = fs.readFileSync('ITWS4200-zonej-tweets.json').toString();
+	var data = fs.readFileSync('ITWS4200-lab6-zonej-tweets.json').toString();
 	var json = JSON.parse(data);
 	var columns = ['created_at', 'id', 'text', 'user.id', 'user.name', 'user.screen_name', 'user.location', 'user.followers_count', 'user.friends_count', 
 		'user.created_at', 'user.time_zone', 'user.profile_background_color', 'user.profile_image_url', 'geo', 'coordinates', 'place'];
@@ -111,7 +134,7 @@ function tweet2csv() {
 
 	json2csv({data: json, fields: columns, fieldNames: col_names}, function(err, csv){
 		if(err) console.log(err);
-		fs.writeFile('ITWS-zonej-tweets.csv', csv, function(err){
+		fs.writeFile('ITWS-lab6-zonej-tweets.csv', csv, function(err){
 			if(err) throw err;
 			console.log('file saved');
 		});
